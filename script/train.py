@@ -1,6 +1,7 @@
 import os
 import yaml
 import argparse
+import mlflow
 
 from src.config import TrainConfig, SineKAN_Config
 from src.utils import CSVDataset
@@ -50,12 +51,39 @@ def main(
         config=train_config,
     )
 
-    # Train
-    history, model = trainer.train()
+    # Initialize MLflow
+    mlflow.set_experiment("SineKAN_Regression_Experiment")
 
-    # Save the training history plot
-    output_path = os.path.join(trainer.outputs_dir, f"{trainer.run_name}.png") if train_config.save_fig else None
-    plot_history(history, save_fig=output_path)
+    with mlflow.start_run(run_name=trainer.run_name):
+
+        # Log configs and hyperparams for mlflow
+        mlflow.log_params(config['model'])
+        mlflow.log_params(config['train'])
+        mlflow.log_param("device", str(device))
+        mlflow.log_param("train_size", train_size)
+        mlflow.log_param("val_size", val_size)
+    
+        # Train
+        history, model = trainer.train()
+
+        # Log metrics from history for mlflow
+        for i in range(len(history['epoch'])):
+            epoch = history['epoch'][i]
+            mlflow.log_metric("train_loss", history['train_loss'][i], step=epoch)
+            mlflow.log_metric("val_loss", history['val_loss'][i], step=epoch)
+
+        # Save the training history plot & log plot for mlflow
+        if train_config.save_fig:
+            output_path = os.path.join(trainer.outputs_dir, f"{trainer.run_name}.png") 
+            plot_history(history, save_fig=output_path)
+            mlflow.log_artifact(output_path)
+
+        # Log final model for mlflow
+        mlflow.pytorch.log_model(model, "model")
+
+        # Log best model for mlflow
+        if train_config.save_best:
+            mlflow.log_artifact(trainer.best_model_path)
 
 if __name__ == "__main__":
 
