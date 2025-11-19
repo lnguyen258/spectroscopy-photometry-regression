@@ -15,10 +15,10 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 from src.config import TrainConfig
-from .loss import LOSS_REGISTRY
-from .optim import OPTIM_REGISTRY, SCHEDULER_REGISTRY
-from .callback import CALLBACK_REGISTRY
-from .get_config import (
+from loss import LOSS_REGISTRY
+from optim import OPTIM_REGISTRY, SCHEDULER_REGISTRY
+from callback import CALLBACK_REGISTRY
+from get_config import (
     get_loss_from_config,
     get_optim_from_config,
     get_scheduler_from_config,
@@ -236,7 +236,7 @@ class Trainer:
         self.logging_path = os.path.join(self.loggings_dir, f"{self.run_name}.csv")
 
     def save_checkpoint(self, epoch: int):
-        if self.checkpoint_path and self.rank == 0:
+        if self.checkpoint_path:
             checkpoint = {
                 'run_name': self.run_name,
                 'epoch': epoch,

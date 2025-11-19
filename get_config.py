@@ -6,7 +6,7 @@ from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
-from .callback import BaseCallback
+from callback import BaseCallback
 
 
 def get_loss_from_config(loss_config: Dict, registry: Dict) -> _Loss:

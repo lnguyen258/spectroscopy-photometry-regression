@@ -44,29 +44,29 @@ class SineKAN(nn.Module):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.A, self.K, self.C = 0.9724108095811765, 0.9884401790754128, 0.999449553483052
-        self.grid_norm_factor = (torch.arange(grid_size) + 1)
-        self.grid_norm_factor = self.grid_norm_factor.reshape(1, 1, grid_size)
+        self.grid_norm_factor = (torch.arange(self.grid_size) + 1)
+        self.grid_norm_factor = self.grid_norm_factor.reshape(1, 1, self.grid_size)
 
         if is_first:
-            self.amplitudes = torch.nn.Parameter(torch.empty(output_dim, input_dim, 1).normal_(0, .4) / output_dim  / self.grid_norm_factor)
+            self.amplitudes = torch.nn.Parameter(torch.empty(self.output_dim, self.input_dim, 1).normal_(0, .4) / self.output_dim  / self.grid_norm_factor)
         else:
-            self.amplitudes = torch.nn.Parameter(torch.empty(output_dim, input_dim, 1).uniform_(-1, 1) / output_dim  / self.grid_norm_factor)
+            self.amplitudes = torch.nn.Parameter(torch.empty(self.output_dim, self.input_dim, 1).uniform_(-1, 1) / self.output_dim  / self.grid_norm_factor)
         
-        grid_phase = torch.arange(1, grid_size + 1).reshape(1, 1, 1, grid_size) / (grid_size + 1)
-        self.input_phase = torch.linspace(0, math.pi, input_dim).reshape(1, 1, input_dim, 1).to(self.device)
-        phase = grid_phase.to(self.device) + self.input_phase
+        grid_phase = torch.arange(1, self.grid_size + 1).reshape(1, 1, 1, self.grid_size) / (self.grid_size + 1)
+        input_phase = torch.linspace(0, math.pi, self.input_dim).reshape(1, 1, self.input_dim, 1).to(self.device)
+        phase = grid_phase.to(self.device) + input_phase
 
-        if norm_freq:
-            self.freq = torch.nn.Parameter(torch.arange(1, grid_size + 1).float().reshape(1, 1, 1, grid_size) / (grid_size + 1)**(1 - is_first))
+        if self.norm_freq:
+            self.freq = torch.nn.Parameter(torch.arange(1, self.grid_size + 1).float().reshape(1, 1, 1, self.grid_size) / (self.grid_size + 1)**(1 - self.is_first))
         else:
-            self.freq = torch.nn.Parameter(torch.arange(1, grid_size + 1).float().reshape(1, 1, 1, grid_size))
+            self.freq = torch.nn.Parameter(torch.arange(1, self.grid_size + 1).float().reshape(1, 1, 1, self.grid_size))
 
         for i in range(1, self.grid_size):
             phase = forward_step(phase, i, self.A, self.K, self.C)
         self.register_buffer('phase', phase)
         
         if self.add_bias:
-            self.bias  = torch.nn.Parameter(torch.ones(1, output_dim) / output_dim)
+            self.bias  = torch.nn.Parameter(torch.ones(1, self.output_dim) / self.output_dim)
 
     def forward(self, x):
         x_shape = x.shape
