@@ -4,7 +4,8 @@ import math
 import torch
 from torch import nn
 
-from .model_config import SineKAN_Config
+from src.config import SineKAN_Config
+
 
 def forward_step(i_n, grid_size, A, K, C):
     ratio = A * grid_size**(-K) + C

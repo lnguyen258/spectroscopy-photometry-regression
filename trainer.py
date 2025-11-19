@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
-from .train_config import TrainConfig
+from src.config import TrainConfig
 from .loss import LOSS_REGISTRY
 from .optim import OPTIM_REGISTRY, SCHEDULER_REGISTRY
 from .callback import CALLBACK_REGISTRY

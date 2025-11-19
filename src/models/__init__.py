@@ -1,0 +1,1 @@
+from .sinekan import SineKAN

@@ -1,0 +1,42 @@
+model: 
+    input_dim: 5
+    output_dim: 3
+    grid_size: 3
+    is_first: True
+    add_bias: True
+    norm_freq: True
+
+train:
+    batch_size: 4
+    criterion: 
+        name: 'mse_loss'
+        kwargs:
+            reduction: 'mean' # 'mean', 'sum', 'none'
+    
+    optimizer:
+        name: 'adam' 
+        kwargs:
+            lr: 0.0002
+            eps: 0.001
+            weight_decay: 0.0
+    scheduler:
+        name: 'exponential_lr'
+        kwargs:
+            gamma: 0.96
+    callbacks: 
+        - name: 'early_stopping'
+          kwargs:
+              monitor: 'val_loss'  
+              mode: 'min' 
+              patience: 5
+              min_delta: 0.001
+    num_epochs: 100
+    start_epoch: 0
+    logging_dir: 'log'
+    logging_steps: 100
+    progress_bar: True
+    save_best: True
+    save_ckpt: True
+    save_fig: True
+    num_workers: 8
+    pin_memory: True
