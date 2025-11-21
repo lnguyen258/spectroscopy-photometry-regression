@@ -66,6 +66,9 @@ def main(
         # Train
         history, model = trainer.train()
 
+        # Inference
+        metrics = trainer.inference()
+        
         # Log metrics from history for mlflow
         for i in range(len(history['epoch'])):
             epoch = history['epoch'][i]

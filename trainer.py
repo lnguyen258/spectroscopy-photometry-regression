@@ -4,6 +4,7 @@ import csv
 from typing import List, Tuple, Dict, Callable, Optional, Union
 
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 from rich.progress import (Progress, TextColumn, BarColumn, 
                            TimeElapsedColumn, TimeRemainingColumn)
@@ -534,3 +535,52 @@ class Trainer:
                 plot(y_true, y_pred, save_fig=output_path)
 
         return test_loss, test_metric, y_true, y_pred
+    
+    @torch.no_grad()
+    def inference(self, save_plot: bool = True):
+
+        self.model.eval()
+
+        predictions = []
+        targets = []
+
+        with torch.no_grad():
+            for X, y in self.val_loader:
+                X = X.to(self.device, non_blocking=self.pin_memory)
+                y = y.to(self.device, non_blocking=self.pin_memory)
+                y_pred = self.model(X)
+                
+                # Store results
+                predictions.extend(y_pred.cpu().numpy())
+                targets.extend(y.cpu().numpy())
+        
+        predictions = np.array(predictions)
+        targets = np.array(targets)
+
+        # Create 3 scatter plots
+        dim_names = ['Fe/H', 'O/Fe', 'Na/Fe']
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+        
+        for i, name in enumerate(dim_names):
+            pred_i = predictions[:, i]
+            target_i = targets[:, i]
+            
+            axes[i].scatter(target_i, pred_i, alpha=0.5, s=20, edgecolors='k', linewidth=0.5)
+            axes[i].plot([target_i.min(), target_i.max()], [target_i.min(), target_i.max()], 
+                        'r--', lw=2, label='Perfect Prediction')
+            axes[i].set_xlabel(f'Real {name}', fontsize=12)
+            axes[i].set_ylabel(f'Predicted {name}', fontsize=12)
+            axes[i].set_title(f'{name}', fontsize=14, fontweight='bold')
+            axes[i].legend()
+            axes[i].grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save plot if requested
+        if save_plot:
+            plot_path = os.path.join(self.outputs_dir, f"{self.run_name}_inference.png")
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            print(f"Plot saved to: {plot_path}")
+        
+        plt.show()
+        
