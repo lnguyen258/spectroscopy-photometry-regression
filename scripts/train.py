@@ -5,7 +5,7 @@ import mlflow
 
 from src.config import TrainConfig, SineKAN_Config
 from src.utils import CSVDataset
-from src.models import SineKAN
+from src.models import MultiLayerSineKAN
 from src.utils import plot_history
 from trainer import Trainer
 
@@ -40,7 +40,7 @@ def main(
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
     # Initialize model
-    model = SineKAN(config=model_config)
+    model = MultiLayerSineKAN(config=model_config)
 
     # Initialize trainer
     trainer = Trainer(
