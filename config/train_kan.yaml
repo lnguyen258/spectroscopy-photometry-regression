@@ -1,6 +1,6 @@
 model: 
     input_dim: 5
-    output_dim: 3
+    output_dim: 1
     grid_size: 4
     is_first: True
     add_bias: True

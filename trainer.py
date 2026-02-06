@@ -538,41 +538,35 @@ class Trainer:
     
     @torch.no_grad()
     def inference(self, save_plot: bool = True):
-
         self.model.eval()
-
+        
         predictions = []
         targets = []
-
+        
         with torch.no_grad():
             for X, y in self.val_loader:
                 X = X.to(self.device, non_blocking=self.pin_memory)
                 y = y.to(self.device, non_blocking=self.pin_memory)
                 y_pred = self.model(X)
                 
-                # Store results
-                predictions.extend(y_pred.cpu().numpy())
-                targets.extend(y.cpu().numpy())
+                # Store results (shape: [batch, 1] -> flatten to 1D)
+                predictions.extend(y_pred.cpu().numpy().flatten())
+                targets.extend(y.cpu().numpy().flatten())
         
         predictions = np.array(predictions)
         targets = np.array(targets)
-
-        # Create 3 scatter plots
-        dim_names = ['Fe/H', 'O/Fe', 'Na/Fe']
-        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
         
-        for i, name in enumerate(dim_names):
-            pred_i = predictions[:, i]
-            target_i = targets[:, i]
-            
-            axes[i].scatter(target_i, pred_i, alpha=0.5, s=20, edgecolors='k', linewidth=0.5)
-            axes[i].plot([target_i.min(), target_i.max()], [target_i.min(), target_i.max()], 
-                        'r--', lw=2, label='Perfect Prediction')
-            axes[i].set_xlabel(f'Real {name}', fontsize=12)
-            axes[i].set_ylabel(f'Predicted {name}', fontsize=12)
-            axes[i].set_title(f'{name}', fontsize=14, fontweight='bold')
-            axes[i].legend()
-            axes[i].grid(True, alpha=0.3)
+        # Single scatter plot for Na/Fe
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        
+        ax.scatter(targets, predictions, alpha=0.5, s=20, edgecolors='k', linewidth=0.5)
+        ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 
+                'r--', lw=2, label='Perfect Prediction')
+        ax.set_xlabel('Real Na/Fe', fontsize=12)
+        ax.set_ylabel('Predicted Na/Fe', fontsize=12)
+        ax.set_title('Na/Fe Prediction', fontsize=14, fontweight='bold')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
         
         plt.tight_layout()
         
@@ -583,4 +577,3 @@ class Trainer:
             print(f"Plot saved to: {plot_path}")
         
         plt.show()
-        

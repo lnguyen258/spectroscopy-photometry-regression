@@ -4,7 +4,7 @@ import argparse
 import mlflow
 
 from src.config import TrainConfig, SineKAN_Config
-from src.utils import CSVDataset
+from src.utils import NaFe_Dataset
 from src.models import SineKAN
 from src.utils import plot_history
 from trainer import Trainer
@@ -16,7 +16,7 @@ import torch
 parser = argparse.ArgumentParser(description="Train a KAN model for regression")
 
 parser.add_argument('--config_path', type=str, default='config/train_kan.yaml')
-parser.add_argument('--data_dir', type=str, default='data/merged_dropna.csv')
+parser.add_argument('--data_dir', type=str, default='data/Photometry+NaFe.csv')
 
 def main(
         config_path: str,
@@ -33,7 +33,7 @@ def main(
     train_config = TrainConfig.from_dict(config['train'])
 
     # Initialize dataset
-    dataset = CSVDataset(data_dir)
+    dataset = NaFe_Dataset(data_dir)
     val_ratio = 0.1
     val_size = int(len(dataset) * val_ratio)
     train_size = len(dataset) - val_size
