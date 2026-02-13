@@ -5,7 +5,7 @@ import mlflow
 
 from src.config import TrainConfig, SineKAN_Config
 from src.utils import NaFe_Dataset
-from src.models import SineKAN
+from src.models import MultiLayerSineKAN
 from src.utils import plot_history
 from trainer import Trainer
 
@@ -16,7 +16,7 @@ import torch
 parser = argparse.ArgumentParser(description="Train a KAN model for regression")
 
 parser.add_argument('--config_path', type=str, default='config/train_kan.yaml')
-parser.add_argument('--data_dir', type=str, default='data/Photometry+NaFe.csv')
+parser.add_argument('--data_dir', type=str, default='data/Photometry+Age+Metallicity+NaFe.csv')
 
 def main(
         config_path: str,
@@ -40,7 +40,7 @@ def main(
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
     # Initialize model
-    model = SineKAN(config=model_config)
+    model = MultiLayerSineKAN(config=model_config)
 
     # Initialize trainer
     trainer = Trainer(

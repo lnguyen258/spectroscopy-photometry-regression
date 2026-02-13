@@ -1,7 +1,8 @@
 model: 
-    input_dim: 5
+    input_dim: 7
     output_dim: 1
-    grid_size: 5
+    hidden_dim: [10]
+    grid_size: 4
     is_first: True
     add_bias: True
     norm_freq: True

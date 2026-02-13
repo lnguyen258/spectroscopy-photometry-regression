@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import math
 
 import torch
@@ -15,7 +15,6 @@ def forward_step(i_n, grid_size, A, K, C):
 class SineKAN(nn.Module):
     def __init__(
             self, 
-            config: Optional[SineKAN_Config] = None,
             input_dim: Optional[int] = None, 
             output_dim: Optional[int] = None, 
             grid_size: Optional[int] = None, 
@@ -24,22 +23,13 @@ class SineKAN(nn.Module):
             norm_freq: Optional[bool] = None,
     ):
         super(SineKAN, self).__init__() 
-
-        # Use config if provided 
-        if config is not None:
-            self.input_dim = input_dim if input_dim is not None else config.input_dim
-            self.output_dim = output_dim if output_dim is not None else config.output_dim
-            self.grid_size = grid_size if grid_size is not None else config.grid_size
-            self.is_first = is_first if is_first is not None else config.is_first
-            self.add_bias = add_bias if add_bias is not None else config.add_bias
-            self.norm_freq = norm_freq if norm_freq is not None else config.norm_freq
-        else:
-            self.input_dim = input_dim if input_dim is not None else 5
-            self.output_dim = output_dim if output_dim is not None else 3
-            self.grid_size = grid_size if grid_size is not None else 3
-            self.is_first = is_first if is_first is not None else True
-            self.add_bias = add_bias if add_bias is not None else True
-            self.norm_freq = norm_freq if norm_freq is not None else True
+        
+        self.input_dim = input_dim if input_dim is not None else 5
+        self.output_dim = output_dim if output_dim is not None else 3
+        self.grid_size = grid_size if grid_size is not None else 3
+        self.is_first = is_first if is_first is not None else True
+        self.add_bias = add_bias if add_bias is not None else True
+        self.norm_freq = norm_freq if norm_freq is not None else True
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -80,3 +70,50 @@ class SineKAN(nn.Module):
             y += self.bias
         y = torch.reshape(y, output_shape)
         return y
+    
+class MultiLayerSineKAN(nn.Module):
+    def __init__(
+            self, 
+            config: Optional[SineKAN_Config] = None,
+            input_dim: Optional[int] = None, 
+            output_dim: Optional[int] = None, 
+            hidden_dim: Optional[List[int]] = None,
+            grid_size: Optional[int] = None, 
+            add_bias: Optional[bool] = None, 
+            norm_freq: Optional[bool] = None,
+    ):
+        super(MultiLayerSineKAN, self).__init__()
+
+        if config is not None:
+            self.input_dim = input_dim if input_dim is not None else config.input_dim
+            self.output_dim = output_dim if output_dim is not None else config.output_dim
+            self.hidden_dim = hidden_dim if hidden_dim is not None else config.hidden_dim
+            self.grid_size = grid_size if grid_size is not None else config.grid_size
+            self.add_bias = add_bias if add_bias is not None else config.add_bias
+            self.norm_freq = norm_freq if norm_freq is not None else config.norm_freq
+        else:
+            self.input_dim = input_dim if input_dim is not None else 5
+            self.output_dim = output_dim if output_dim is not None else 3
+            self.hidden_dim = hidden_dim if hidden_dim is not None else [10]
+            self.grid_size = grid_size if grid_size is not None else 3
+            self.add_bias = add_bias if add_bias is not None else True
+            self.norm_freq = norm_freq if norm_freq is not None else True
+        
+        # Build layers
+        layer_dims = [self.input_dim] + self.hidden_dim + [self.output_dim]
+        self.layers = nn.ModuleList()
+        for i in range(len(layer_dims) - 1):
+            layer = SineKAN(
+                input_dim=layer_dims[i],
+                output_dim=layer_dims[i+1],
+                grid_size=self.grid_size,
+                is_first=(i == 0),  
+                add_bias=self.add_bias,
+                norm_freq=self.norm_freq
+            )
+            self.layers.append(layer)
+        
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class SineKAN_Config:
     input_dim: int
     output_dim: int
+    hidden_dim: List[int]
     grid_size: int
     is_first: bool
     add_bias: bool

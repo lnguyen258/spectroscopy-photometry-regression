@@ -1,1 +1,1 @@
-from .sinekan import SineKAN
+from .sinekan import MultiLayerSineKAN
