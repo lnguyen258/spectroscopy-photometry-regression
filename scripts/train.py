@@ -16,7 +16,7 @@ import torch
 parser = argparse.ArgumentParser(description="Train a KAN model for regression")
 
 parser.add_argument('--config_path', type=str, default='config/train_kan.yaml')
-parser.add_argument('--data_dir', type=str, default='data/Photometry+Age+Metallicity+OFe.csv')
+parser.add_argument('--data_dir', type=str, default='data/Photometry+Age+Metallicity+NaFe.csv')
 
 def main(
         config_path: str,

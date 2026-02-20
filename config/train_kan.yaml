@@ -17,8 +17,8 @@ train:
     optimizer:
         name: 'adam' 
         kwargs:
-            lr: 0.0002
-            eps: 0.001
+            lr: 0.0001
+            eps: 0.00000001
             weight_decay: 0.0
     scheduler:
         name: 'exponential_lr'
