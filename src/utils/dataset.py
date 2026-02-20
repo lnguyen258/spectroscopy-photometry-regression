@@ -13,7 +13,7 @@ class NaFe_Dataset(Dataset):
 
         # original magnitude columns
         mag_cols = ['F275W_abs', 'F336W_abs', 'F435W_abs', 'F606W_abs', 'F814W_abs', 'Fe/H', 'age_Kruijssen']
-        output_col = 'Na/Fe'
+        output_col = 'O/Fe'
 
         df = pd.read_csv(csv_path)
 

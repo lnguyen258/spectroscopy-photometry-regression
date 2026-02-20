@@ -562,9 +562,9 @@ class Trainer:
         ax.scatter(targets, predictions, alpha=0.5, s=20, edgecolors='k', linewidth=0.5)
         ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 
                 'r--', lw=2, label='Perfect Prediction')
-        ax.set_xlabel('Real Na/Fe', fontsize=12)
-        ax.set_ylabel('Predicted Na/Fe', fontsize=12)
-        ax.set_title('Na/Fe Prediction', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Real O/Fe', fontsize=12)
+        ax.set_ylabel('Predicted O/Fe', fontsize=12)
+        ax.set_title('O/Fe Prediction', fontsize=14, fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
         
