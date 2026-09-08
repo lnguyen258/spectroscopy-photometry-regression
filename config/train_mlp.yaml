@@ -1,0 +1,41 @@
+model:
+    input_dim: 7
+    output_dim: 1
+    hidden_dims: [64, 32, 16]
+    dropout: 0.01
+    activation: 'relu'
+
+train:
+    batch_size: 8
+    criterion:
+        name: 'mse_loss'
+        kwargs:
+            reduction: 'mean'
+
+    optimizer:
+        name: 'adam'
+        kwargs:
+            lr: 0.0001
+            eps: 0.00000001
+            weight_decay: 0.0001
+    scheduler:
+        name: 'exponential_lr'
+        kwargs:
+            gamma: 0.98
+    callbacks:
+        - name: 'early_stopping'
+          kwargs:
+              monitor: 'val_loss'
+              mode: 'min'
+              patience: 5
+              min_delta: 0.001
+    num_epochs: 200
+    start_epoch: 0
+    logging_dir: 'log'
+    logging_steps: 100
+    progress_bar: True
+    save_best: True
+    save_ckpt: True
+    save_fig: True
+    num_workers: 8
+    pin_memory: True

@@ -3,9 +3,9 @@ import yaml
 import argparse
 import mlflow
 
-from src.config import TrainConfig, SineKAN_Config
+from src.config import TrainConfig, MLP_Config
 from src.utils import NaFe_Dataset, NaFe_Dataset_Colors
-from src.models import MultiLayerSineKAN
+from src.models import MLP
 
 DATASET_REGISTRY = {
     'default': NaFe_Dataset,
@@ -18,12 +18,12 @@ from torch.utils.data import random_split, WeightedRandomSampler
 import torch
 
 
-parser = argparse.ArgumentParser(description="Train a KAN model for regression")
+parser = argparse.ArgumentParser(description="Train an MLP model for regression")
 
-parser.add_argument('--config_path', type=str, default='config/train_kan.yaml')
+parser.add_argument('--config_path', type=str, default='config/train_mlp_colors.yaml')
 parser.add_argument('--train_data', type=str, default='data/Na_Fe_training_data.csv')
 parser.add_argument('--test_data', type=str, default='data/Na_Fe_TEST_DATA.csv')
-parser.add_argument('--dataset', type=str, default='default', choices=['default', 'colors'])
+parser.add_argument('--dataset', type=str, default='colors', choices=['default', 'colors'])
 
 def main(
         config_path: str,
@@ -38,7 +38,7 @@ def main(
     device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
     # Initialize config
-    model_config = SineKAN_Config.from_dict(config['model'])
+    model_config = MLP_Config.from_dict(config['model'])
     train_config = TrainConfig.from_dict(config['train'])
 
     # Initialize datasets — test set uses train normalization stats
@@ -60,7 +60,7 @@ def main(
     )
 
     # Initialize model
-    model = MultiLayerSineKAN(config=model_config)
+    model = MLP(config=model_config)
 
     # Initialize trainer
     trainer = Trainer(
@@ -74,7 +74,7 @@ def main(
     )
 
     # Initialize MLflow
-    mlflow.set_experiment("SineKAN_Regression_Experiment")
+    mlflow.set_experiment("MLP_Regression_Experiment")
 
     with mlflow.start_run(run_name=trainer.run_name):
 
@@ -125,4 +125,3 @@ if __name__ == "__main__":
         test_data=args.test_data,
         dataset=args.dataset,
     )
-

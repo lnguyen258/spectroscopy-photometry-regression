@@ -1,7 +1,7 @@
 import os
 import re
 import csv
-from typing import List, Tuple, Dict, Callable, Optional, Union
+from typing import Callable, List, Tuple, Dict, Optional, Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,9 +11,8 @@ from rich.progress import (Progress, TextColumn, BarColumn,
 from rich.console import Console
 
 import torch
-import torch.nn.functional as F
 from torch import nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Sampler
 
 from src.config import TrainConfig
 from loss import LOSS_REGISTRY
@@ -105,7 +104,8 @@ class Trainer:
         save_ckpt: Optional[bool] = None,
         save_fig: Optional[bool] = None,
         num_workers: Optional[int] = None,
-        pin_memory: Optional[bool] = None
+        pin_memory: Optional[bool] = None,
+        train_sampler: Optional[Sampler] = None,
     ):
 
         if device is not None:
@@ -159,9 +159,11 @@ class Trainer:
         self.train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=(train_sampler is None),
+            sampler=train_sampler,
             num_workers=self.num_workers,
-            pin_memory=self.pin_memory
+            pin_memory=self.pin_memory,
+            drop_last=True,
         )
         self.val_loader = DataLoader(
             dataset=val_dataset,
@@ -466,114 +468,48 @@ class Trainer:
         return self.history, self.model
     
     @torch.no_grad()
-    def evaluate(
-        self,
-        loss_type: str,
-        plot: Optional[Union[Callable, List[Callable]]] = None
-    ) -> Tuple[float, float, np.ndarray, np.ndarray]:
+    def inference(self, save_plot: bool = True):
         if self.test_loader is None:
             raise ValueError("Test dataset is not provided.")
-        
+
         self.model.eval()
-        loss_sum = 0.0
-        metric_sum = 0.0
-        count = 0
-        local_true = []
-        local_pred = []
 
-        for X_test, y_test in self.test_loader:
-            X_test = X_test.to(self.device, non_blocking=self.pin_memory)
-            y_test = y_test.to(self.device, non_blocking=self.pin_memory)
-
-            outputs = self.model(X_test)
-            batch_loss = self.criterion(outputs, y_test)
-            bsz = y_test.size(0)
-            loss_sum += float(batch_loss.item()) * bsz
-
-            if self.metric:
-                metric_sum += float(self.metric(outputs, y_test)) * bsz
-
-            count += bsz
-
-            probs = outputs
-            if loss_type == 'cross_entropy':
-                probs = F.softmax(outputs, dim=1)
-            elif loss_type == 'bce':
-                probs = torch.sigmoid(outputs)
-
-            local_true.append(y_test.detach().cpu().numpy())
-            local_pred.append(probs.detach().cpu().numpy())
-
-        # Stack per-rank arrays
-        local_true = np.concatenate(local_true, axis=0) if local_true else np.empty((0,))
-        local_pred = np.concatenate(local_pred, axis=0) if local_pred else np.empty((0,))
-
-        # Gather scalars from all processes
-        total_loss_sum = loss_sum
-        total_metric_sum = metric_sum
-        total_count = count
-
-        # Global averages
-        test_loss = total_loss_sum / max(total_count, 1)
-        test_metric = (total_metric_sum / max(total_count, 1)) if self.metric else 0.0
-
-        y_true = local_true
-        y_pred = local_pred
-
-        print(f"test_loss: {test_loss:.4f} | test_metric: {test_metric:.4f}")
-
-        # Visualization
-        if plot is not None:
-            if isinstance(plot, list):
-                for i, viz in enumerate(plot):
-                    output_path = os.path.join(self.outputs_dir, f"{self.run_name}_viz_{i + 1}.png")
-                    output_path = output_path if self.save_fig else None
-                    viz(y_true, y_pred, save_fig=output_path)
-            else:
-                output_path = os.path.join(self.outputs_dir, f"{self.run_name}.png")
-                output_path = output_path if self.save_fig else None
-                plot(y_true, y_pred, save_fig=output_path)
-
-        return test_loss, test_metric, y_true, y_pred
-    
-    @torch.no_grad()
-    def inference(self, save_plot: bool = True):
-        self.model.eval()
-        
         predictions = []
         targets = []
-        
-        with torch.no_grad():
-            for X, y in self.val_loader:
-                X = X.to(self.device, non_blocking=self.pin_memory)
-                y = y.to(self.device, non_blocking=self.pin_memory)
-                y_pred = self.model(X)
-                
-                # Store results (shape: [batch, 1] -> flatten to 1D)
-                predictions.extend(y_pred.cpu().numpy().flatten())
-                targets.extend(y.cpu().numpy().flatten())
-        
+
+        for X, y in self.test_loader:
+            X = X.to(self.device, non_blocking=self.pin_memory)
+            y = y.to(self.device, non_blocking=self.pin_memory)
+            y_pred = self.model(X)
+
+            predictions.extend(y_pred.cpu().numpy().flatten())
+            targets.extend(y.cpu().numpy().flatten())
+
         predictions = np.array(predictions)
         targets = np.array(targets)
-        
-        # Single scatter plot for Na/Fe
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        
+
+        test_loss = float(self.criterion(
+            torch.tensor(predictions).unsqueeze(1),
+            torch.tensor(targets).unsqueeze(1)
+        ).item())
+        print(f"test_loss: {test_loss:.4f}")
+
+        _, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.scatter(targets, predictions, alpha=0.5, s=20, edgecolors='k', linewidth=0.5)
-        ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 
+        ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()],
                 'r--', lw=2, label='Perfect Prediction')
-        ax.set_xlabel('Real O/Fe', fontsize=12)
-        ax.set_ylabel('Predicted O/Fe', fontsize=12)
-        ax.set_title('O/Fe Prediction', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Real Na/Fe', fontsize=12)
+        ax.set_ylabel('Predicted Na/Fe', fontsize=12)
+        ax.set_title('Na/Fe Prediction', fontsize=14, fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
-        
         plt.tight_layout()
-        
-        # Save plot if requested
+
         if save_plot:
             plot_path = os.path.join(self.outputs_dir, f"{self.run_name}_inference.png")
             plt.savefig(plot_path, dpi=300, bbox_inches='tight')
             print(f"Plot saved to: {plot_path}")
-        
+
         plt.show()
+
+        return test_loss, targets, predictions

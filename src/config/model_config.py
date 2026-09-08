@@ -14,3 +14,16 @@ class SineKAN_Config:
     @classmethod
     def from_dict(cls, d: Dict):
         return cls(**d)
+
+
+@dataclass
+class MLP_Config:
+    input_dim: int
+    output_dim: int
+    hidden_dims: List[int]
+    dropout: float
+    activation: str
+
+    @classmethod
+    def from_dict(cls, d: Dict):
+        return cls(**d)
