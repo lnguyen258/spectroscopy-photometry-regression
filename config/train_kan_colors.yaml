@@ -1,23 +1,24 @@
 model:
     input_dim: 6
     output_dim: 1
-    hidden_dim: [10]
-    grid_size: 4
+    hidden_dim: [32, 16]
+    grid_size: 6
     is_first: True
     add_bias: True
     norm_freq: True
 
 train:
-    batch_size: 4
+    batch_size: 8
     criterion:
-        name: 'mse_loss'
+        name: 'huber_loss'
         kwargs:
+            delta: 0.25
             reduction: 'mean'
 
     optimizer:
         name: 'adam'
         kwargs:
-            lr: 0.0001
+            lr: 0.0003
             eps: 0.00000001
             weight_decay: 0.0
     scheduler:

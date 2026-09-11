@@ -20,10 +20,10 @@ import torch
 
 parser = argparse.ArgumentParser(description="Train a KAN model for regression")
 
-parser.add_argument('--config_path', type=str, default='config/train_kan.yaml')
+parser.add_argument('--config_path', type=str, default='config/train_kan_colors.yaml')
 parser.add_argument('--train_data', type=str, default='data/Na_Fe_training_data.csv')
 parser.add_argument('--test_data', type=str, default='data/Na_Fe_TEST_DATA.csv')
-parser.add_argument('--dataset', type=str, default='default', choices=['default', 'colors'])
+parser.add_argument('--dataset', type=str, default='colors', choices=['default', 'colors'])
 
 def main(
         config_path: str,
